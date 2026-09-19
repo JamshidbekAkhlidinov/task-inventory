@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Enums\ClientOrderStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ClientOrder extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'client_id',
         'storage_id',
