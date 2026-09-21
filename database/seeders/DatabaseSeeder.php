@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
-        | Provider
+        | Providers
         |--------------------------------------------------------------------------
         */
 
@@ -47,15 +47,33 @@ class DatabaseSeeder extends Seeder
             'address' => 'Tashkent, Uzbekistan',
         ]);
 
+        $secondProvider = Provider::factory()->create([
+            'name' => 'Global Parts Trading',
+            'phone' => '+998907654321',
+            'email' => 'sales@globalparts.example.com',
+            'address' => 'Samarkand, Uzbekistan',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
-        | Categories
+        | Categories (with a parent/child hierarchy)
         |--------------------------------------------------------------------------
         */
 
         $category = Category::factory()->create([
             'provider_id' => $provider->id,
             'name' => 'Electronics',
+        ]);
+
+        $peripheralsCategory = Category::factory()->create([
+            'provider_id' => $provider->id,
+            'parent_id' => $category->id,
+            'name' => 'Peripherals',
+        ]);
+
+        $secondCategory = Category::factory()->create([
+            'provider_id' => $secondProvider->id,
+            'name' => 'Office Supplies',
         ]);
 
         /*
@@ -65,20 +83,32 @@ class DatabaseSeeder extends Seeder
         */
 
         $product1 = Product::factory()->create([
-            'category_id' => $category->id,
+            'category_id' => $peripheralsCategory->id,
             'name' => 'Wireless Mouse',
             'sale_price' => 150000,
         ]);
 
         $product2 = Product::factory()->create([
-            'category_id' => $category->id,
+            'category_id' => $peripheralsCategory->id,
             'name' => 'Mechanical Keyboard',
             'sale_price' => 650000,
         ]);
 
+        $product3 = Product::factory()->create([
+            'category_id' => $secondCategory->id,
+            'name' => 'A4 Paper Ream',
+            'sale_price' => 45000,
+        ]);
+
+        $product4 = Product::factory()->create([
+            'category_id' => $secondCategory->id,
+            'name' => 'Stapler',
+            'sale_price' => 35000,
+        ]);
+
         /*
         |--------------------------------------------------------------------------
-        | Storage
+        | Storages
         |--------------------------------------------------------------------------
         */
 
@@ -87,9 +117,14 @@ class DatabaseSeeder extends Seeder
             'address' => 'Tashkent, Uzbekistan',
         ]);
 
+        $secondStorage = Storage::factory()->create([
+            'name' => 'Regional Warehouse',
+            'address' => 'Samarkand, Uzbekistan',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
-        | Batch #1
+        | Batch #1 (oldest, cheapest cost)
         |--------------------------------------------------------------------------
         */
 
@@ -118,7 +153,7 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
-        | Batch #2
+        | Batch #2 (newer, higher cost — for FIFO testing)
         |--------------------------------------------------------------------------
         */
 
@@ -147,6 +182,35 @@ class DatabaseSeeder extends Seeder
 
         /*
         |--------------------------------------------------------------------------
+        | Batch #3 (second provider, second storage, different cost)
+        |--------------------------------------------------------------------------
+        */
+
+        $batch3 = Batch::factory()->create([
+            'provider_id' => $secondProvider->id,
+            'storage_id' => $secondStorage->id,
+            'purchased_at' => now()->subDays(15),
+            'reference' => 'PO-0003',
+        ]);
+
+        BatchItem::factory()->create([
+            'batch_id' => $batch3->id,
+            'product_id' => $product3->id,
+            'quantity' => 100,
+            'available_quantity' => 100,
+            'unit_cost' => 25000,
+        ]);
+
+        BatchItem::factory()->create([
+            'batch_id' => $batch3->id,
+            'product_id' => $product4->id,
+            'quantity' => 50,
+            'available_quantity' => 50,
+            'unit_cost' => 18000,
+        ]);
+
+        /*
+        |--------------------------------------------------------------------------
         | Storage Stock
         |--------------------------------------------------------------------------
         */
@@ -161,6 +225,18 @@ class DatabaseSeeder extends Seeder
             'storage_id' => $storage->id,
             'product_id' => $product2->id,
             'quantity' => 30,
+        ]);
+
+        StorageStock::factory()->create([
+            'storage_id' => $secondStorage->id,
+            'product_id' => $product3->id,
+            'quantity' => 100,
+        ]);
+
+        StorageStock::factory()->create([
+            'storage_id' => $secondStorage->id,
+            'product_id' => $product4->id,
+            'quantity' => 50,
         ]);
 
         /*
@@ -209,9 +285,29 @@ class DatabaseSeeder extends Seeder
             'reference_id' => $batch2->id,
         ]);
 
+        StockMovement::factory()->create([
+            'storage_id' => $secondStorage->id,
+            'product_id' => $product3->id,
+            'batch_id' => $batch3->id,
+            'type' => StockMovementType::PURCHASE,
+            'quantity' => 100,
+            'reference_type' => 'batch',
+            'reference_id' => $batch3->id,
+        ]);
+
+        StockMovement::factory()->create([
+            'storage_id' => $secondStorage->id,
+            'product_id' => $product4->id,
+            'batch_id' => $batch3->id,
+            'type' => StockMovementType::PURCHASE,
+            'quantity' => 50,
+            'reference_type' => 'batch',
+            'reference_id' => $batch3->id,
+        ]);
+
         /*
         |--------------------------------------------------------------------------
-        | Client
+        | Clients
         |--------------------------------------------------------------------------
         */
 
@@ -219,9 +315,17 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test Client',
         ]);
 
+        Client::factory()->create([
+            'name' => 'Northgate Retail LLC',
+        ]);
+
+        Client::factory()->create([
+            'name' => 'Aziz Karimov',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
-        | Client Order
+        | Client Order (demonstrates FIFO consuming both batches)
         |--------------------------------------------------------------------------
         */
 

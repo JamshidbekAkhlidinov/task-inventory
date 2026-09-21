@@ -12,7 +12,7 @@ class StorageFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company() . ' Warehouse',
+            'name' => fake()->company().' Warehouse',
             'address' => fake()->address(),
             'is_active' => true,
         ];
