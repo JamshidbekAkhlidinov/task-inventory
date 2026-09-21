@@ -54,4 +54,41 @@ class StorageStockApiTest extends TestCase
 
         $this->travelBack();
     }
+
+    public function test_it_returns_current_stock_across_all_storages_when_no_storage_is_given(): void
+    {
+        $storageOne = Storage::factory()->create(['name' => 'Main Warehouse']);
+        $storageTwo = Storage::factory()->create(['name' => 'Regional Warehouse']);
+        $product = Product::factory()->create();
+        $inventory = app(InventoryService::class);
+
+        $inventory->increase($storageOne, $product, 10);
+        $inventory->increase($storageTwo, $product, 4);
+
+        $response = $this->getJson('/api/storage/stock');
+
+        $response->assertOk();
+        $response->assertJsonFragment(['storage_name' => 'Main Warehouse', 'quantity' => 10]);
+        $response->assertJsonFragment(['storage_name' => 'Regional Warehouse', 'quantity' => 4]);
+    }
+
+    public function test_it_reconstructs_historical_stock_across_all_storages(): void
+    {
+        $storage = Storage::factory()->create(['name' => 'Main Warehouse']);
+        $product = Product::factory()->create();
+        $inventory = app(InventoryService::class);
+
+        $base = now();
+
+        $this->travelTo($base->copy()->subDays(10));
+        $inventory->increase($storage, $product, 15);
+
+        $response = $this->getJson('/api/storage/stock?date='.$base->copy()->toDateString());
+
+        $response->assertOk();
+        $response->assertJsonPath('storage_id', null);
+        $response->assertJsonFragment(['storage_name' => 'Main Warehouse', 'quantity' => 15]);
+
+        $this->travelBack();
+    }
 }

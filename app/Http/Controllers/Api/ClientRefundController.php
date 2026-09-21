@@ -15,6 +15,10 @@ class ClientRefundController extends Controller
         private readonly ClientRefundService $clientRefundService,
     ) {}
 
+    /**
+     * Return sold units from a client order. Each unit is restored to
+     * the exact batch it was originally allocated from.
+     */
     public function store(StoreClientRefundRequest $request): JsonResponse
     {
         $data = $request->validated();

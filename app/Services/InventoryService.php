@@ -159,6 +159,59 @@ class InventoryService
     }
 
     /**
+     * Current stock for every product across every storage.
+     *
+     * @return Collection<int, StorageStock>
+     */
+    public function allCurrentStock(): Collection
+    {
+        return StorageStock::query()
+            ->where('quantity', '>', 0)
+            ->with(['storage', 'product'])
+            ->get();
+    }
+
+    /**
+     * Reconstruct stock quantities for every storage as of a given date,
+     * derived from the stock_movements ledger.
+     *
+     * @return Collection<int, array{storage_id: int, storage_name: ?string, product_id: int, product_name: ?string, quantity: int}>
+     */
+    public function allHistoricalStock(\DateTimeInterface $date, ?Product $product = null): Collection
+    {
+        $increasing = [
+            StockMovementType::PURCHASE->value,
+            StockMovementType::CLIENT_REFUND->value,
+        ];
+
+        $query = StockMovement::query()
+            ->join('storages', 'storages.id', '=', 'stock_movements.storage_id')
+            ->join('products', 'products.id', '=', 'stock_movements.product_id')
+            ->where('stock_movements.created_at', '<=', $date)
+            ->selectRaw(
+                'stock_movements.storage_id as storage_id,'
+                .' storages.name as storage_name,'
+                .' stock_movements.product_id as product_id,'
+                .' products.name as product_name,'
+                .' SUM(CASE WHEN stock_movements.type IN (?, ?) THEN stock_movements.quantity ELSE -stock_movements.quantity END) as quantity',
+                $increasing
+            )
+            ->groupBy('stock_movements.storage_id', 'storages.name', 'stock_movements.product_id', 'products.name');
+
+        if ($product) {
+            $query->where('stock_movements.product_id', $product->id);
+        }
+
+        return $query->get()->map(fn ($row) => [
+            'storage_id' => (int) $row->storage_id,
+            'storage_name' => $row->storage_name,
+            'product_id' => (int) $row->product_id,
+            'product_name' => $row->product_name,
+            'quantity' => (int) $row->quantity,
+        ]);
+    }
+
+    /**
      * Reconstruct stock quantities for a storage as of a given date,
      * derived from the stock_movements ledger rather than the current
      * storage_stocks snapshot.

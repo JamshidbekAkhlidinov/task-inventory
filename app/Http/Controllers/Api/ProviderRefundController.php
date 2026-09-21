@@ -15,6 +15,10 @@ class ProviderRefundController extends Controller
         private readonly ProviderRefundService $providerRefundService,
     ) {}
 
+    /**
+     * Return units from a single batch back to its provider. Cannot
+     * exceed the batch's available quantity.
+     */
     public function store(StoreProviderRefundRequest $request): JsonResponse
     {
         $data = $request->validated();

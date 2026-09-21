@@ -15,7 +15,7 @@ class BatchItemResource extends JsonResource
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
-            'product_name' => $this->whenLoaded('product', fn () => $this->product->name),
+            'product_name' => $this->whenLoaded('product', fn () => $this->product?->name),
             'quantity' => $this->quantity,
             'available_quantity' => $this->available_quantity,
             'unit_cost' => (float) $this->unit_cost,

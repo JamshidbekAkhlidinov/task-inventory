@@ -14,7 +14,7 @@ class StorageStockResource extends JsonResource
     {
         return [
             'product_id' => $this->product_id,
-            'product_name' => $this->whenLoaded('product', fn () => $this->product->name),
+            'product_name' => $this->whenLoaded('product', fn () => $this->product?->name),
             'quantity' => $this->quantity,
         ];
     }

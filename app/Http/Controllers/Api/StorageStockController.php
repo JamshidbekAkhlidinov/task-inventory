@@ -17,37 +17,54 @@ class StorageStockController extends Controller
     ) {}
 
     /**
-     * Current or historical stock for a storage. When a `date` is
-     * given, quantities are reconstructed from the stock_movements
-     * ledger instead of the current storage_stocks snapshot.
+     * Current or historical stock. Pass `storage_id` to scope to one
+     * storage, or omit it to see every storage. When a `date` is given,
+     * quantities are reconstructed from the stock_movements ledger
+     * instead of the current storage_stocks snapshot.
      */
     public function index(StorageStockRequest $request): JsonResponse
     {
         $data = $request->validated();
 
-        $storage = Storage::findOrFail($data['storage_id']);
+        $storage = isset($data['storage_id']) ? Storage::find($data['storage_id']) : null;
         $product = isset($data['product_id']) ? Product::find($data['product_id']) : null;
 
         if (! empty($data['date'])) {
-            $stock = $this->inventoryService->historicalStock(
-                storage: $storage,
-                date: new \DateTime($data['date']),
-                product: $product,
-            );
+            $date = new \DateTime($data['date']);
+
+            $stock = $storage
+                ? $this->inventoryService->historicalStock($storage, $date, $product)
+                : $this->inventoryService->allHistoricalStock($date, $product);
 
             return response()->json([
-                'storage_id' => $storage->id,
+                'storage_id' => $storage?->id,
                 'date' => $data['date'],
                 'stock' => $stock->values(),
             ]);
         }
 
-        $stocks = $this->inventoryService->currentStock($storage);
+        if ($storage) {
+            $stocks = $this->inventoryService->currentStock($storage);
+
+            if ($product) {
+                $stocks = $stocks->where('product_id', $product->id)->values();
+            }
+
+            return StorageStockResource::collection($stocks)->response();
+        }
+
+        $stocks = $this->inventoryService->allCurrentStock();
 
         if ($product) {
             $stocks = $stocks->where('product_id', $product->id)->values();
         }
 
-        return StorageStockResource::collection($stocks)->response();
+        return response()->json($stocks->map(fn ($stock) => [
+            'storage_id' => $stock->storage_id,
+            'storage_name' => $stock->storage?->name,
+            'product_id' => $stock->product_id,
+            'product_name' => $stock->product?->name,
+            'quantity' => $stock->quantity,
+        ])->values());
     }
 }

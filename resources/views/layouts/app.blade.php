@@ -17,6 +17,11 @@
                     @php
                         $links = [
                             'dashboard' => 'Dashboard',
+                            'clients.index' => 'Clients',
+                            'providers.index' => 'Providers',
+                            'categories.index' => 'Categories',
+                            'products.index' => 'Products',
+                            'storages.index' => 'Storages',
                             'purchases.create' => 'Purchase',
                             'provider-refunds.create' => 'Provider Refund',
                             'orders.create' => 'Order',
@@ -33,6 +38,15 @@
                             {{ $label }}
                         </a>
                     @endforeach
+
+                    <a
+                        href="{{ url('/docs/api') }}"
+                        target="_blank"
+                        rel="noopener"
+                        class="rounded-md px-3 py-1.5 font-medium text-gray-600 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    >
+                        API Docs
+                    </a>
                 </nav>
             </div>
         </header>

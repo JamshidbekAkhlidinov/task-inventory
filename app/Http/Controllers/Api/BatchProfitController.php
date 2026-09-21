@@ -13,6 +13,10 @@ class BatchProfitController extends Controller
         private readonly BatchProfitService $batchProfitService,
     ) {}
 
+    /**
+     * Profit for a single batch, computed from its actual FIFO sales
+     * net of client refunds — never the product's current sale price.
+     */
     public function show(Batch $batch): JsonResponse
     {
         return response()->json(
@@ -20,6 +24,9 @@ class BatchProfitController extends Controller
         );
     }
 
+    /**
+     * Profit for every batch that has at least one FIFO allocation.
+     */
     public function index(): JsonResponse
     {
         return response()->json([

@@ -16,6 +16,10 @@ class PurchaseController extends Controller
         private readonly PurchaseService $purchaseService,
     ) {}
 
+    /**
+     * Create a purchase batch. Increases storage stock and records a
+     * purchase stock movement for each item, atomically.
+     */
     public function store(StorePurchaseRequest $request): JsonResponse
     {
         $data = $request->validated();

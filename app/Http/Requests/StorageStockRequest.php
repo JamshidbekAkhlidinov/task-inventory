@@ -17,7 +17,7 @@ class StorageStockRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'storage_id' => ['required', 'integer', 'exists:storages,id'],
+            'storage_id' => ['nullable', 'integer', 'exists:storages,id'],
             'date' => ['nullable', 'date'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
         ];
